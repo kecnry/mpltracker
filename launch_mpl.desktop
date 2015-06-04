@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=MPL Launcher
+Comment=Launch a matplotlib window
+Exec=/home/kyle/Documents/research/19-Phoebe_Archive/test_mpl_handler/launch_mpl.py
+Terminal=true
+Type=Application
+Categories=Application;
+MimeType=text/plain;x-scheme-handler/mpl;
+StartupNotify=true
+Name[en_US]=launch_mpl.desktop
