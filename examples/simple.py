@@ -12,7 +12,6 @@ plt.xlabel('my xlabel')
 
 # save the tracker to a file
 mpltracker.save('simple.mpl')
-mpltracker.stop()
 
 # clear matplotlibs figure, just to show that there is no funny business
 plt.clf()
