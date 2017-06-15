@@ -7,6 +7,13 @@ _intercept_user = False
 import decorations
 import functools
 
+try:
+    from astropy.table import Table, Column
+except ImportError:
+    _has_astropy = False
+else:
+    _has_astropy = True
+
 
 def intercept_func(fctn):
     """
@@ -176,6 +183,62 @@ class MPLTracker(object):
             string += "{}\n".format(command.func)
         return string
 
+    def get_data(self):
+        """
+        get all data (args) from all commands that have been tracked
+        """
+        lst = []
+        for command in self.commands:
+            # TODO: this makes the assumption of xy data... we may need to be
+            # more clever for other plotting types
+
+            # TODO: we are also assuming that data is always sent as args (not
+            # kwargs)
+            lst.append([command.args[0], command.args[1]])
+
+        return lst
+
+    def get_data_table(self, format=None):
+        """
+        get all data (args) from all commands that have been tracked and return
+        an astropy table instance
+        """
+        if not _has_astropy:
+            raise ImportError("could not import astropy.table.Table")
+
+        t = Table()
+
+        # For now let's only support plot with a single dataset.  Its difficult
+        # otherwise to deal with different lengthed columns.
+        if len(self.commands) != 1:
+            print self.commands
+            raise NotImplementedError("currently only supports 1 dataset (you have {})".format(len(self.commands)))
+
+        for command in self.commands:
+            # TODO: this makes the assumption of xy data... we may need to be
+            # more clever for other plotting types
+
+            # TODO: we are also assuming that data is always sent as args (not
+            # kwargs)
+
+            # TODO: get column names from the datalabels or axes labels
+            # TODO: units, etc
+            xinfo = {}
+            xinfo['data'] = command.args[0]
+            xinfo['name'] = 'x'
+            t.add_column(Column(**xinfo))
+
+
+            yinfo = {}
+            yinfo['data'] = command.args[1]
+            yinfo['name'] = 'y'
+            t.add_column(Column(**yinfo))
+
+        if format is None:
+            return t
+        else:
+            return t.write(sys.stdout, format)
+
     def add(self, func, *args, **kwargs):
         """
         add exactly as it would be called from matplotlib.pyplot (plt)
@@ -338,6 +401,31 @@ def get_fig(load=None):
         mpltr = MPLTracker(load)
 
     return gct().get_fig()
+
+def get_data(load=None):
+    """
+    load a figure from a JSON string, URL, or filename and immediately
+    return the data associated with that figure
+    """
+    if load is not None:
+        mpltr = MPLTracker(load)
+
+    return gct().get_data()
+
+def get_data_table(load=None):
+    """
+    load a figure from a JSON string, URL, or filename and immediately
+    return the data associated with that figure
+    """
+    if load is not None:
+        mpltr = MPLTracker(load)
+
+    return gct().get_data_table()
+
+def write_data_table(load=None, filename='table.data', format='ascii.ecsv'):
+    """
+    """
+    return get_data_table(load=load).write(filename, format=format)
 
 def add(func, *args, **kwargs):
     """

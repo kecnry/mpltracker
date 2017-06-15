@@ -1,3 +1,4 @@
 *.pyc
 *.mpl
+examples/*.ecsv
 build
