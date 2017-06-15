@@ -12,7 +12,7 @@ def intercept_func(fctn):
     """
     this is a decorator, which when attached to a function will pass
     that function through mpltr.add()
-    
+
     """
     @functools.wraps(fctn)
     def call(*args, **kwargs):
@@ -26,14 +26,14 @@ def intercept_func(fctn):
         else:
             #~ print "intercept_func disabled", fctn
             return fctn(*args, **kwargs)
-            
+
     return call
-    
+
 def intercept_method(obj, fctn):
     """
     this is a decorator, which when attached to a method of an object will pass
     that function through mpltr.add()
-    
+
     """
     # extra argument needed because of this bug: http://bugs.python.org/issue3445
     @functools.wraps(fctn, set(['__doc__']))
@@ -48,9 +48,9 @@ def intercept_method(obj, fctn):
         else:
             #~ print "intercept_method disabled", obj, fctn
             return fctn(*args, **kwargs)
-            
+
     return call
-    
+
 def attach_decorators_to_object(obj):
     recursive_names = []
     #~ recursive_names = ['canvas']
@@ -66,8 +66,8 @@ def attach_decorators_to_object(obj):
             # recursively call this functiona gain
             attach_decorators_to_object(fn)
 
-    
-    
+
+
 def disable_intercept(fctn):
     """
     this is a decorator which should wrap any internal function that calls plt
@@ -123,7 +123,7 @@ class MPLPlotCommand(object):
             obj = plt
 
         ret = getattr(obj, self.func)(*self.args, **self.kwargs)
-        
+
         return ret
 
 class MPLTracker(object):
@@ -141,10 +141,10 @@ class MPLTracker(object):
         self.returns = {}
         # used returns holds a list of the id's of returned objects that are actually used
         self.used_returns = []
-        
+
         # TODO: handle args smarter so we don't store duplicates for arrays ?
         #   this would require storing data in the MPLTracker instead of the MPLCommand
-        
+
         if load is not None:
             if isinstance(load, file):
                 data = f.readline()
@@ -158,10 +158,10 @@ class MPLTracker(object):
                 except ValueError:
                     # as last resort: maybe we were passed the json string itself
                     data = load
-            
+
             for cdict in json.loads(data):
                 self.commands.append(MPLPlotCommand(cdict['id_obj'], cdict['func'], *cdict['args'], ids_return=cdict['ids_return'], **cdict['kwargs']))
-    
+
     def list_commands(self):
         """
         quick summary of all commands that have been tracked
@@ -175,31 +175,31 @@ class MPLTracker(object):
                 #~ string += self.returns[command.id_obj].__name__
             string += "{}\n".format(command.func)
         return string
-    
+
     def add(self, func, *args, **kwargs):
         """
         add exactly as it would be called from matplotlib.pyplot (plt)
-        
+
         examples:
         plt.plot(a,b,'k.') => mpltr.add_plot_command(plt.plot, a, b, 'k.')
-        
+
         fig = plt.figure() => fig = mpltr.add_plot_command(plt.figure)
         ax = fig.add_subplot(111) => ax = mpltr.add_plot_command(fig.add_subplot, (111))
         """
         if hasattr(func, 'im_self'):
-            # then func is an attribute of some obj that we hopefully 
+            # then func is an attribute of some obj that we hopefully
             # have stored in self.returns
             if func.im_self in self.returns.values():
                 # then the obj was a return from a previous command
                 obj = func.im_self
-                
+
                 # we need to remember to track this connection when saving
                 self.used_returns.append(id(obj))
-                    
+
             else:
                 raise ValueError("cannot find object: {}".format(func.im_self))
                 # TODO: test this error statement
-                    
+
         else:
             # default to func being an attribute of plt
             # TODO: handle more options
@@ -207,13 +207,13 @@ class MPLTracker(object):
             #   from mpl_toolkits.mplot3d import art3d
             #   different ways to import plt?
             obj = plt
-        
+
         comm = MPLPlotCommand(obj, func, *args, **kwargs)
         self.commands.append(comm)
 
         # we need to run this command so we can track the output
         ret = comm.run(obj)
-        
+
         if not (isinstance(ret, list) or isinstance(ret, tuple)):
             ret_ = (ret,)
         else:
@@ -224,16 +224,16 @@ class MPLTracker(object):
 
             comm.ids_return.append(id(ri))
             self.returns[id(ri)] = ri
-        
+
         # return as if the user was making the call directly
         return ret
-        
+
     def save(self, filename=None):
         # purge not-needed returns
         #    clear all command.ids_return if not in self.used_returns
         #    clear self.returns
         #    clear self.used_returns
-            
+
         for command in self.commands:
             for i,id_return in reversed(list(enumerate(command.ids_return))):
                 if id_return not in self.used_returns:
@@ -242,7 +242,7 @@ class MPLTracker(object):
         self.used_returns = []
 
         dump = json.dumps([c.__dict__ for c in self.commands], cls=NumpyAwareJSONEncoder)
-        
+
         if filename is not None:
             f = open(filename, 'w')
             f.write(dump)
@@ -251,7 +251,7 @@ class MPLTracker(object):
         else:
             # just return the json string
             return dump
-    
+
     @disable_intercept
     def get_fig(self):
         for command in self.commands:
@@ -261,25 +261,25 @@ class MPLTracker(object):
                 obj = self.returns[command.id_obj]
             else:
                 obj = plt
-            
+
             ret = command.run(obj)
-            
+
             if not (isinstance(ret, list) or isinstance(ret, tuple)):
                 ret_ = (ret,)
             else:
                 ret_ = ret
 
-            for ri,id_return in zip(ret_,command.ids_return):                
+            for ri,id_return in zip(ret_,command.ids_return):
                 self.returns[id_return] = ri
-        
+
         return plt.gcf()
-      
+
     @disable_intercept
     def show(self):
         fig = self.get_fig()
         plt.show()
         return None
-        
+
 def intercept(on=True):
     """
     enable or disable tracking/interecpting of matplotlib calls
@@ -296,13 +296,15 @@ def start(new=False):
         mpltr = MPLTracker()
 
     intercept(True)
-    
+
+    # return mpltr
+
 def stop():
     """
     intercept(False)
     """
-    intercept(True)
-    
+    intercept(False)
+
 def gct():
     """
     get current tracker
@@ -324,9 +326,9 @@ def show(load=None):
     """
     if load is not None:
         mpltr = MPLTracker(load)
-    
+
     gct().show()
-    
+
 def get_fig(load=None):
     """
     load a figure from a JSON string, URL, or filename and immediately
@@ -334,16 +336,16 @@ def get_fig(load=None):
     """
     if load is not None:
         mpltr = MPLTracker(load)
-    
+
     return gct().get_fig()
-    
+
 def add(func, *args, **kwargs):
     """
     global call to mpltr.add
     """
     if _current is None:
         mpltr = MPLTracker()
-        
+
     return gct().add(func, *args, **kwargs)
 
 def save(filename=None, stop_intercept=True):

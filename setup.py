@@ -2,11 +2,11 @@
 
 from distutils.core import setup
 
-setup(name='mplviewer',
+setup(name='mpltracker',
       version='0.1.0',
-      description='Matplotlib tracker',
+      description='Matplotlib Tracker',
       author='Kyle Conroy',
       author_email='kyleconroy@gmail.com',
-      url='https://www.github.com/kecnry/mpl-viewer',
-      packages=['mplviewer'],
+      url='https://www.github.com/kecnry/mpltracker',
+      packages=['mpltracker'],
      )
