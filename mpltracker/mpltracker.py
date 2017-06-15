@@ -18,13 +18,13 @@ def intercept_func(fctn):
     def call(*args, **kwargs):
         global _intercept
         if _intercept:
-            #~ print "intercept_func enabled", fctn
+            # print "intercept_func enabled", fctn
             _intercept = False
             return_ = add(fctn, *args, **kwargs)
             _intercept = True
             return return_
         else:
-            #~ print "intercept_func disabled", fctn
+            # print "intercept_func disabled", fctn
             return fctn(*args, **kwargs)
 
     return call
@@ -40,13 +40,13 @@ def intercept_method(obj, fctn):
     def call(*args, **kwargs):
         global _intercept
         if _intercept:
-            #~ print "intercept_method enabled", obj, fctn
+            # print "intercept_method enabled", obj, fctn
             _intercept = False
             return_ = add(fctn, *args, **kwargs)
             _intercept = True
             return return_
         else:
-            #~ print "intercept_method disabled", obj, fctn
+            # print "intercept_method disabled", obj, fctn
             return fctn(*args, **kwargs)
 
     return call
@@ -170,9 +170,9 @@ class MPLTracker(object):
         for command in self.commands:
             # TODO: make this nicer - problem is after saving we lose the actual returns
             # perhaps we could also store their names?
-            #~ if command.id_obj is not None:
-                #~ print self.returns, command.id_obj
-                #~ string += self.returns[command.id_obj].__name__
+            # if command.id_obj is not None:
+                # print self.returns, command.id_obj
+                # string += self.returns[command.id_obj].__name__
             string += "{}\n".format(command.func)
         return string
 
@@ -257,7 +257,7 @@ class MPLTracker(object):
         for command in self.commands:
             if command.id_obj is not None:
                 # then we need to get from self.returns
-                #~ print "getting obj from self.returns", command.id_obj, self.returns
+                # print "getting obj from self.returns", command.id_obj, self.returns
                 obj = self.returns[command.id_obj]
             else:
                 obj = plt

@@ -10,8 +10,6 @@ plt.plot([1,2,3],[1,2,3])
 plt.title('my title')
 plt.xlabel('my xlabel')
 
-print mpltracker.list_commands()
-
 # save the tracker to a file
 mpltracker.save('simple.mpl')
 mpltracker.stop()
