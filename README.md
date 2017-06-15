@@ -1,5 +1,9 @@
 # mpltracker
 
-NOTE: currently this does not work when built and installed through the setup script [see bug report](https://github.com/kecnry/mpl-viewer/issues/1).  Any examples will need to be run within the mpltracker directory until this bug can be tracked down and fixed.
+This module intercepts all calls to matplotlib and then allows you to do any of the following:
+* save the figure to a json-formatted file which can then be reloaded
+* show or save the image
+* access the data arrays
+* export the arrays to an ecsv file formatted to submit directly to the journals (work in progress)
 
-See examples in example directory.
+See several examples in example directory.
