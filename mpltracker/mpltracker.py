@@ -379,8 +379,9 @@ def axes(*args, **kwargs):
     create a new mpl axes and track only that object (and its children)
     """
     intercept(False)  # TODO: not sure if this is the best way
-    mpltr, mplax = MPLTracker.init_object(plt.axes, *args, **kwargs)
+    mpltr, mplfig = MPLTracker.init_object(plt.figure, *args, **kwargs)
     intercept(True)
+    mplax = mplfig.add_subplot(111)
     return mplax
 
 def figure(*args, **kwargs):
