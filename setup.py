@@ -9,4 +9,5 @@ setup(name='mpltracker',
       author_email='kyleconroy@gmail.com',
       url='https://www.github.com/kecnry/mpltracker',
       packages=['mpltracker'],
+      scripts=['mpltracker/mplshow'],
      )
