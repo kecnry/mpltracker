@@ -12,7 +12,7 @@ This module intercepts all calls to [matplotlib](https://github.com/matplotlib/m
 
 * [matplotlib](https://github.com/matplotlib/matplotlib)
 * [numpy](https://github.com/numpy/numpy)
-* [astropy (optional - used for exporting to tables](https://github.com/astropy/astropy)
+* [astropy](https://github.com/astropy/astropy) (optional - used for exporting to tables)
 
 Currently mpltracker has been tested on Python 2.7 with matplotlib 1.5.2.  There is currently an [open issue](https://github.com/kecnry/mpltracker/issues/2) to create nosetests and test on multiple version of Python/matplotlib.
 
