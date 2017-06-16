@@ -85,6 +85,26 @@ Installing mpltracker also installs a command-line utility called `mplshow`.  mp
 mplshow <file>.mpl
 ```
 
+## Example
+
+Below is a simple matplotlib figure created in the [simple example script](https://github.com/kecnry/mpltracker/blob/master/examples/simple.py) but which links to the output file from mpltracker.  Clicking on the image will show the `simple.mpl` file which could then be opened with mpltracker or mplshow from the command-line.
+
+There is an [open issue](https://github.com/kecnry/mpltracker/issues/1) to support registering mplshow for specific file extensions or web-proticols so that clicking on an image linking to the .mpl file would automatically pop-up the interactive figure.  Until then, you need to copy the URL and call mplshow manually:
+
+```
+mplshow https://raw.githubusercontent.com/kecnry/mpltracker/master/examples/simple.mpl
+```
+
+<a href="https://raw.githubusercontent.com/kecnry/mpltracker/master/examples/simple.mpl"><img src="https://github.com/kecnry/mpltracker/blob/master/examples/simple.png" width="400px"/></a>
+
+The html code for this is simply
+
+```
+<a href="https://raw.githubusercontent.com/kecnry/mpltracker/master/examples/simple.mpl"><img src="https://github.com/kecnry/mpltracker/blob/master/examples/simple.png" width="400px"/></a>
+```
+
+making it trivial to display images on a website which are then interactive (for any user that has mpltracker/mplshow installed) locally with a single click (once the [open issue](https://github.com/kecnry/mpltracker/issues/1) is close).
+
 ## Credits
 
 Much of the backbone behind mpltracker depends on hacking and decorating the matplotlib module.  Although slightly modified, most of the [modulehacker.py](https://github.com/kecnry/mpltracker/blob/master/mpltracker/modulehacker.py) and [decorations.py](https://github.com/kecnry/mpltracker/blob/master/mpltracker/decorations.py) were originally created by [Eric Snow](http://code.activestate.com/recipes/users/4177816/) and included here under the MIT license.  The originally postings can be found here for [modulehacker.py](http://code.activestate.com/recipes/577740/) and for [decorations.py](http://code.activestate.com/recipes/577742-apply-decorators-to-all-functions-in-a-module/) (these links can also be found in the credits in the source-code in this project).
