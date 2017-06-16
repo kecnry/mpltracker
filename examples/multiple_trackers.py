@@ -31,9 +31,13 @@ mpltracker.gct(fig1).save('multiple_trackers_fig1.mpl')
 mpltracker.gct(fig2).save('multiple_trackers_fig2.mpl')
 mpltracker.gct(ax).save('multiple_trackers_ax.mpl')
 
+
+# we can clear just the figure, but keep the tracker
 plt.close(fig1)
-plt.close(fig2)
-plt.cla()
+# or we can clear both the figure AND the tracker from memory
+mpltracker.close(fig2)
+
+plt.clf()
 
 # NOTE: because there is no way to close an axes instance, this first call
 # will likely also popup and empty figure.  If running the rest of this script

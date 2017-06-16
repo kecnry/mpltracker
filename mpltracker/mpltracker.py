@@ -393,6 +393,30 @@ def figure(*args, **kwargs):
     intercept(True)
     return mplfigure
 
+def close(obj):
+    if not isinstance(obj, MPLTracker):
+        mpltr = gct(obj)
+
+        # close the matplotlib object
+        try:
+            plt.close(obj)
+        except:
+            pass
+    else:
+        mpltr = obj
+
+    global _current
+    global _trackers
+
+    if _current == mpltr:
+        _current = None
+
+    for k,v in _trackers.items():
+        if v == mpltr:
+            del _trackers[k]
+
+    del mpltr
+
 
 def intercept(on=True):
     """
