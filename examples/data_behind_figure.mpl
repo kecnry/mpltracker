@@ -1,0 +1,1 @@
+[{"kwargs": {}, "args": [[1, 2, 3], [1, 2, 3]], "ids_return": [], "func": "plot", "id_obj": null}]

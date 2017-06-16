@@ -13,6 +13,9 @@ plt.xlabel('my xlabel')
 # save the tracker to a file
 mpltracker.save('simple.mpl')
 
+# also save the image itself to a png
+plt.savefig('simple.png')
+
 # clear matplotlibs figure, just to show that there is no funny business
 plt.clf()
 
