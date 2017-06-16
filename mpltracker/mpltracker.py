@@ -4,6 +4,8 @@ _current = None
 _intercept = False
 _intercept_user = False
 
+_trackers = {}
+
 import decorations
 import functools
 
@@ -14,7 +16,6 @@ except ImportError:
 else:
     _has_astropy = True
 
-
 def intercept_func(fctn):
     """
     this is a decorator, which when attached to a function will pass
@@ -24,10 +25,19 @@ def intercept_func(fctn):
     @functools.wraps(fctn)
     def call(*args, **kwargs):
         global _intercept
+        global _trackers
         if _intercept:
             # print "intercept_func enabled", fctn
             _intercept = False
-            return_ = add(fctn, *args, **kwargs)
+            # for the sake of getting the right tracker, we need to see if
+            # the plt.* command is acting on a stored object
+            if plt.gcf() in _trackers.keys():
+                obj = plt.gcf()
+            elif plt.gca() in _trackers.keys():
+                obj = plt.gca()
+            else:
+                obj = None
+            return_ = add(obj, fctn, *args, **kwargs)
             _intercept = True
             return return_
         else:
@@ -49,7 +59,7 @@ def intercept_method(obj, fctn):
         if _intercept:
             # print "intercept_method enabled", obj, fctn
             _intercept = False
-            return_ = add(fctn, *args, **kwargs)
+            return_ = add(obj, fctn, *args, **kwargs)
             _intercept = True
             return return_
         else:
@@ -138,9 +148,10 @@ class MPLTracker(object):
     class that holds multiple MPLPlotCommand objects and handles passing
     any objects that are returned from one command and later passed to another
     """
-    def __init__(self, load=None):
-        global _current
-        _current = self
+    def __init__(self, load=None, set_as_current=True):
+        if set_as_current:
+            global _current
+            _current = self
 
         # commands holds an ordered list of MPLPlotCommand objects
         self.commands = []
@@ -168,6 +179,19 @@ class MPLTracker(object):
 
             for cdict in json.loads(data):
                 self.commands.append(MPLPlotCommand(cdict['id_obj'], cdict['func'], *cdict['args'], ids_return=cdict['ids_return'], **cdict['kwargs']))
+
+    @classmethod
+    def init_object(cls, func_to_create_obj, *args, **kwargs):
+        """
+        """
+        tracker = cls(set_as_current=False)
+        ret_obj = tracker.add(func_to_create_obj, *args, **kwargs)
+        global _trackers
+        _trackers[ret_obj] = tracker
+
+        return tracker, ret_obj
+
+
 
     def list_commands(self):
         """
@@ -261,7 +285,6 @@ class MPLTracker(object):
 
             else:
                 raise ValueError("cannot find object: {}".format(func.im_self))
-                # TODO: test this error statement
 
         else:
             # default to func being an attribute of plt
@@ -281,12 +304,20 @@ class MPLTracker(object):
             ret_ = (ret,)
         else:
             ret_ = ret
+
+
         for ri in ret_:
             # now we need to attach the intercept decorator to any function of ret
             attach_decorators_to_object(ri)
 
             comm.ids_return.append(id(ri))
             self.returns[id(ri)] = ri
+
+        # add all items to be tracked by this tracker
+        global _trackers
+        if obj!=plt and obj in _trackers.keys():
+            for ri in ret_:
+                _trackers[ri] = self
 
         # return as if the user was making the call directly
         return ret
@@ -343,6 +374,25 @@ class MPLTracker(object):
         plt.show()
         return None
 
+def axes(*args, **kwargs):
+    """
+    create a new mpl axes and track only that object (and its children)
+    """
+    intercept(False)  # TODO: not sure if this is the best way
+    mpltr, mplax = MPLTracker.init_object(plt.axes, *args, **kwargs)
+    intercept(True)
+    return mplax
+
+def figure(*args, **kwargs):
+    """
+    create a new mpl figure and track only that object (and its children)
+    """
+    intercept(False)  # TODO: not sure if this is the best way
+    mpltr, mplfigure = MPLTracker.init_object(plt.figure, *args, **kwargs)
+    intercept(True)
+    return mplfigure
+
+
 def intercept(on=True):
     """
     enable or disable tracking/interecpting of matplotlib calls
@@ -351,16 +401,16 @@ def intercept(on=True):
     _intercept = on
     _intercept_user = on
 
-def start(new=False):
+def start():
     """
     intercept(True)
     """
-    if new:
-        mpltr = MPLTracker()
+    # if obj is not None:
+        # mpltr = MPLTracker()
 
     intercept(True)
 
-    # return mpltr
+    return gct(obj=None)
 
 def stop():
     """
@@ -368,13 +418,17 @@ def stop():
     """
     intercept(False)
 
-def gct():
+def gct(obj=None):
     """
     get current tracker
     """
     if _current is None:
         mpltr = MPLTracker()
-    return _current
+
+    if obj is None:
+        return _current
+    else:
+        return _trackers.get(obj, _current)
 
 def list_commands():
     """
@@ -427,14 +481,14 @@ def write_data_table(load=None, filename='table.data', format='ascii.ecsv'):
     """
     return get_data_table(load=load).write(filename, format=format)
 
-def add(func, *args, **kwargs):
+def add(obj, func, *args, **kwargs):
     """
     global call to mpltr.add
     """
     if _current is None:
         mpltr = MPLTracker()
 
-    return gct().add(func, *args, **kwargs)
+    return gct(obj).add(func, *args, **kwargs)
 
 def save(filename=None, stop_intercept=True):
     """
