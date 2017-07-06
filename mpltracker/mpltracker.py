@@ -80,7 +80,7 @@ def attach_decorators_to_object(obj):
             # now override so that the decorator will always be called
             setattr(obj, name, new_method)
         elif isinstance(fn, types.ObjectType) and name in recursive_names:
-            # recursively call this functiona gain
+            # recursively call this function again
             attach_decorators_to_object(fn)
 
 

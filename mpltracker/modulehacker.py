@@ -42,8 +42,9 @@ class Loader:
         # print "*** modulehacker.find_module", name, path
         sys.meta_path.remove(self)
         # not entirely sure why this is necessary, but the parent mpltracker
-        # module is import functions with the mpltracker. name which causes
-        # everything to fail when installed.  This fixes https://github.com/kecnry/mpltracker/issues/1
+        # module is importing functions with the mpltracker. name which causes
+        # everything to fail when installed.
+        # This fixes https://github.com/kecnry/mpltracker/issues/1
         if 'mpltracker.' in name:
             name = '.'.join(name.split('.')[1:])
         self.module = importlib.import_module(name)
