@@ -41,7 +41,7 @@ import mpltracker
 import matplotlib.pyplot as plt
 ```
 
-By calling start, the tracker will then start 'spying' and recording all commands sent through matplotlib 
+By calling start, the tracker will then start 'spying' and recording all commands sent through matplotlib
 
 ```
 mpltracker.start()
@@ -114,18 +114,18 @@ Calling mpltracker.save simply dumps a json-formatted file of these stored argum
 The first call to matplotlib after tracking is enabled is `fig = plt.figure(figsize=(12,6))` which is then stored in the output file as:
 
 ```
-{"kwargs": {"figsize": [12, 6]}, "args": [], "ids_return": [139686175805200], "func": "figure", "id_obj": null}
+{"returns": ["<id:140521903846288>"], "args": [], "obj": null, "func": "figure", "kwargs": {"figsize": [12, 6]}}
 ```
 
-When rebuilding the figure, this simply says to call the `figure` function of `plt` (since id_obj is null) with no args and figsize=[12,6] as keyword arguments.  This will then return a single object (which was called fig in the script), and which is labeled with a random number for later reference.
+When rebuilding the figure, this simply says to call the `figure` function of `plt` (since obj is null) with no args and figsize=[12,6] as keyword arguments.  This will then return a single object (which was called fig in the script), and which is labeled with a random ID for later reference.
 
 The second call to matplotlib is `ax1 = fig.add_subplot(121)` and is stored in the output file as:
 
 ```
-{"kwargs": {}, "args": [121], "ids_return": [139686175949840], "func": "add_subplot", "id_obj": 139686175805200}
+{"returns": ["<id:140521903401296>"], "args": [121], "obj": "<id:140521903846288>", "func": "add_subplot", "kwargs": {}}
 ```
 
-So as the second step of rebuilding the figure, this says to call the `add_subplot` *method* of whatever object was assigned to that number (in this case what we called fig), with [121] as args and no keyword arguments.  This in turn will return a single object (ax1) which will also be assigned a random number.
+So as the second step of rebuilding the figure, this says to call the `add_subplot` *method* of whatever object was assigned to the ID associated with obj (in this case what we called fig), with [121] as args and no keyword arguments.  This in turn will return a single object (ax1) which will also be assigned ID.
 
 ## Credits
 

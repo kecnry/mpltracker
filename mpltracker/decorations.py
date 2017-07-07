@@ -55,7 +55,10 @@ class Hacker(modulehacker.Hacker):
     def decorate(self, module, decorator):
         for attr in module.__dict__:
             obj = getattr(module, attr)
-            if isinstance(obj, types.FunctionType):
-                setattr(module, attr, decorator(obj))
+            if isinstance(obj, types.FunctionType) or isinstance(obj, types.TypeType):
+                # some conflict with internal matplotlib functionality
+                if obj.__name__ not in ['Figure', 'Colormap']:
+                    # print "hacking", module, attr
+                    setattr(module, attr, decorator(obj))
 
 modulehacker.register(Hacker())

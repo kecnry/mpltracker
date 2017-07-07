@@ -1,1 +1,1 @@
-[{"kwargs": {}, "args": [[1, 2, 3], [1, 2, 3]], "ids_return": [], "func": "plot", "id_obj": null}, {"kwargs": {}, "args": ["my title"], "ids_return": [], "func": "title", "id_obj": null}, {"kwargs": {}, "args": ["my xlabel"], "ids_return": [], "func": "xlabel", "id_obj": null}]
+[{"returns": ["<id:UNUSED>"], "args": [[1, 2, 3], [1, 2, 3]], "obj": null, "func": "plot", "kwargs": {}}, {"returns": ["<id:UNUSED>"], "args": ["my title"], "obj": null, "func": "title", "kwargs": {}}, {"returns": ["<id:UNUSED>"], "args": ["my xlabel"], "obj": null, "func": "xlabel", "kwargs": {}}]

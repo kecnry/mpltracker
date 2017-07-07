@@ -84,7 +84,6 @@ def attach_decorators_to_object(obj):
             attach_decorators_to_object(fn)
 
 
-
 def disable_intercept(fctn):
     """
     this is a decorator which should wrap any internal function that calls plt
@@ -104,21 +103,88 @@ def disable_intercept(fctn):
 # later we'll attach the decorator to any returned object
 decorations.register(intercept_func, "matplotlib.pyplot")
 
+# in order to hack the classes in matplotlib.collections, we first need to
+# hack anything that may subclass those classes... which is a bit ugly and
+# surely could break some unforseen things
+decorations.register(intercept_func, "mpl_toolkits.mplot3d.art3d")
+decorations.register(intercept_func, "mpl_toolkits.axes_grid.anchored_artists")
+decorations.register(intercept_func, "matplotlib.collections")
+decorations.register(intercept_func, "matplotlib.colors")
+
 import numpy as np
+
 import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.art3d
+import mpl_toolkits.axes_grid.anchored_artists
+import matplotlib.collections
+import matplotlib.colors
+
 import inspect, types
 import json
+import base64
 import os, sys
 import urllib2
 
-class NumpyAwareJSONEncoder(json.JSONEncoder):
+class JSONEncoder(json.JSONEncoder):
     """
-    handle translating np arrays into lists so json can dump correctly
+    https://stackoverflow.com/questions/3488934/simplejson-and-numpy-array
     """
+
     def default(self, obj):
-        if isinstance(obj, np.ndarray) and obj.ndim == 1:
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
+        """If input object is an ndarray it will be converted into a dict
+        holding dtype, shape and the data, base64 encoded.
+        """
+        if isinstance(obj, np.ndarray):
+            if obj.flags['C_CONTIGUOUS']:
+                obj_data = obj.data
+            else:
+                cont_obj = np.ascontiguousarray(obj)
+                assert(cont_obj.flags['C_CONTIGUOUS'])
+                obj_data = cont_obj.data
+            data_b64 = base64.b64encode(obj_data)
+            return dict(__ndarray__=data_b64,
+                        dtype=str(obj.dtype),
+                        shape=obj.shape)
+
+        if inspect.isclass(obj):
+            return dict(__module__=obj.__module__, __class__=obj.__name__)
+
+        # Let the base class default method raise the TypeError
+        return super(JSONEncoder, self).default(obj)
+
+def json_obj_hook(dct):
+    """Decodes a previously encoded numpy ndarray with proper shape and dtype.
+
+    https://stackoverflow.com/questions/3488934/simplejson-and-numpy-array
+
+    :param dct: (dict) json encoded ndarray
+    :return: (ndarray) if input was an encoded ndarray
+    """
+    if isinstance(dct, dict) and '__ndarray__' in dct:
+        data = base64.b64decode(dct['__ndarray__'])
+        return np.frombuffer(data, dct['dtype']).reshape(dct['shape'])
+
+    # elif isinstance(dct, dict) and '__module__' in dct:
+        # print "***", dct, getattr(sys.modules[dct['__module__']], dct['__class__'])
+        # return getattr(sys.modules[dct['__module__']], dct['__class__'])
+
+    return dct
+
+def _id(obj):
+    if (isinstance(obj, str) or isinstance(obj, unicode)) and obj[0:4]=='<id:':
+        return obj
+    elif obj is None:
+        return None
+    elif obj is plt:
+        return None
+    else:
+        return '<id:{}>'.format(id(obj))
+
+def _getobject(obj, available_objects):
+    if (isinstance(obj, str) or isinstance(obj, unicode)) and obj[0:4]=='<id:':
+        return available_objects.get(obj)
+    else:
+        return obj
 
 class MPLPlotCommand(object):
     """
@@ -128,18 +194,75 @@ class MPLPlotCommand(object):
         if hasattr(func, 'func_name'):
             func = func.func_name
 
-        self.id_obj = obj if (isinstance(obj, int) or obj is None) else id(obj) if obj != plt else None
-        self.func = func
-        self.args = args
-        self.ids_return = kwargs.pop('ids_return', [])
-        self.kwargs = kwargs
+        self._obj = _id(obj)
+        self._func = func
+        self._args = args
+        self._returns = kwargs.pop('returns', [])
+        self._kwargs = kwargs
 
-    def run(self, obj=None):
-        #~ print "MPLPlotCommand.run", self.func, self.args, self.kwargs
-        if obj is None:
-            obj = plt
+    def __repr__(self):
+        return '<MPLPlotCommand {}>'.format(self.func)
 
-        ret = getattr(obj, self.func)(*self.args, **self.kwargs)
+    def __str__(self):
+        return '{} = {}.{}(*{}, **{})'.format(self.returns, self.obj, self.func, self.args, self.kwargs)
+
+    @property
+    def __dict__(self):
+        return {'returns': self._returns, 'obj': self._obj, 'func': self._func, 'args': self._args, 'kwargs': self._kwargs}
+
+    @property
+    def obj(self):
+        if self._obj is None:
+            if isinstance(self.func, types.TypeType):
+                return None
+            else:
+                return plt
+        else:
+            return self._obj
+
+    @property
+    def func(self):
+        if isinstance(self._func, dict) and '__module__' in self._func:
+            return getattr(sys.modules[self._func['__module__']], self._func['__class__'])
+        else:
+            return self._func
+
+    @property
+    def args(self):
+        return self._args
+
+    @property
+    def kwargs(self):
+        return self._kwargs
+
+    @property
+    def returns(self):
+        return self._returns
+
+    def run(self, obj=None, available_objects={}):
+        # print "MPLPlotCommand.run", obj, self.func, self.args, self.kwargs
+
+        # parse args and kwargs to see if within available_objects
+        args = list(self.args)
+        for i,arg in enumerate(args):
+            args[i] = _getobject(arg, available_objects)
+
+        kwargs = self.kwargs
+        for k,v in kwargs.items():
+            kwargs[k] = _getobject(v, available_objects)
+
+        obj = _getobject(obj, available_objects)
+
+        if isinstance(self.func, types.TypeType) or isinstance(self.func, types.FunctionType):
+            # then forget obj, we want to instantiate self.func
+            ret = self.func(*args, **kwargs)
+
+        else:
+
+            if obj is None:
+                obj = plt
+
+            ret = getattr(obj, self.func)(*args, **kwargs)
 
         return ret
 
@@ -156,9 +279,9 @@ class MPLTracker(object):
         # commands holds an ordered list of MPLPlotCommand objects
         self.commands = []
         # returns holds a dictionary of id, object pairs returned by plotting calls
-        self.returns = {}
+        self.available_objects = {}
         # used returns holds a list of the id's of returned objects that are actually used
-        self.used_returns = []
+        self.used_objects = []
 
         # TODO: handle args smarter so we don't store duplicates for arrays ?
         #   this would require storing data in the MPLTracker instead of the MPLCommand
@@ -177,8 +300,8 @@ class MPLTracker(object):
                     # as last resort: maybe we were passed the json string itself
                     data = load
 
-            for cdict in json.loads(data):
-                self.commands.append(MPLPlotCommand(cdict['id_obj'], cdict['func'], *cdict['args'], ids_return=cdict['ids_return'], **cdict['kwargs']))
+            for cdict in json.loads(data, object_hook=json_obj_hook):
+                self.commands.append(MPLPlotCommand(cdict['obj'], cdict['func'], *cdict['args'], returns=cdict['returns'], **cdict['kwargs']))
 
     @classmethod
     def init_object(cls, func_to_create_obj, *args, **kwargs):
@@ -191,8 +314,6 @@ class MPLTracker(object):
 
         return tracker, ret_obj
 
-
-
     def list_commands(self):
         """
         quick summary of all commands that have been tracked
@@ -201,9 +322,6 @@ class MPLTracker(object):
         for command in self.commands:
             # TODO: make this nicer - problem is after saving we lose the actual returns
             # perhaps we could also store their names?
-            # if command.id_obj is not None:
-                # print self.returns, command.id_obj
-                # string += self.returns[command.id_obj].__name__
             string += "{}\n".format(command.func)
         return string
 
@@ -268,23 +386,27 @@ class MPLTracker(object):
         add exactly as it would be called from matplotlib.pyplot (plt)
 
         examples:
-        plt.plot(a,b,'k.') => mpltr.add_plot_command(plt.plot, a, b, 'k.')
+        plt.plot(a,b,'k.') => mpltr.add(plt.plot, a, b, 'k.')
 
-        fig = plt.figure() => fig = mpltr.add_plot_command(plt.figure)
-        ax = fig.add_subplot(111) => ax = mpltr.add_plot_command(fig.add_subplot, (111))
+        fig = plt.figure() => fig = mpltr.add(plt.figure)
+        ax = fig.add_subplot(111) => ax = mpltr.add(fig.add_subplot, (111))
         """
         if hasattr(func, 'im_self'):
             # then func is an attribute of some obj that we hopefully
             # have stored in self.returns
-            if func.im_self in self.returns.values():
+            if func.im_self in self.available_objects.values():
                 # then the obj was a return from a previous command
                 obj = func.im_self
 
                 # we need to remember to track this connection when saving
-                self.used_returns.append(id(obj))
+                self.used_objects.append(_id(obj))
 
             else:
-                raise ValueError("cannot find object: {}".format(func.im_self))
+                # raise ValueError("mpltracker cannot find object: {}".format(func.im_self))
+                # then we'll just call this as normal
+                # TODO: add logger warning?
+                # print "skipping tracking for call on {}".format(func.im_self)
+                return func(*args, **kwargs)
 
         else:
             # default to func being an attribute of plt
@@ -294,24 +416,38 @@ class MPLTracker(object):
             #   different ways to import plt?
             obj = plt
 
+        # parse args and kwargs for items already being tracked
+        args = list(args)
+        for i,arg in enumerate(args):
+            idarg = _id(arg)
+            if idarg in self.available_objects.keys():
+                args[i] = idarg
+                self.used_objects.append(idarg)
+
+        for k,v in kwargs.items():
+            idkwarg = _id(v)
+            if idkwarg in self.available_objects.keys():
+                kwargs[k] = idkwarg
+                self.used_objects.append(idkwarg)
+
         comm = MPLPlotCommand(obj, func, *args, **kwargs)
         self.commands.append(comm)
 
         # we need to run this command so we can track the output
-        ret = comm.run(obj)
+        ret = comm.run(obj, self.available_objects)
 
         if not (isinstance(ret, list) or isinstance(ret, tuple)):
             ret_ = (ret,)
         else:
             ret_ = ret
 
-
         for ri in ret_:
-            # now we need to attach the intercept decorator to any function of ret
+            # now we need to attach the intercept decorator to any method on the
+            # returned object
             attach_decorators_to_object(ri)
 
-            comm.ids_return.append(id(ri))
-            self.returns[id(ri)] = ri
+            comm.returns.append(_id(ri))
+            self.available_objects[_id(ri)] = ri
 
         # add all items to be tracked by this tracker
         global _trackers
@@ -324,18 +460,19 @@ class MPLTracker(object):
 
     def save(self, filename=None):
         # purge not-needed returns
-        #    clear all command.ids_return if not in self.used_returns
-        #    clear self.returns
-        #    clear self.used_returns
+        #    clear all command.returns if not in self.used_objects
+        #    clear self.available_objects
+        #    clear self.used_objects
 
         for command in self.commands:
-            for i,id_return in reversed(list(enumerate(command.ids_return))):
-                if id_return not in self.used_returns:
-                    command.ids_return.pop(i)
-        self.returns = {}
-        self.used_returns = []
+            for i,return_ in reversed(list(enumerate(command.returns))):
+                if return_ not in self.used_objects:
+                    command.returns[i] = '<id:UNUSED>'
 
-        dump = json.dumps([c.__dict__ for c in self.commands], cls=NumpyAwareJSONEncoder)
+        self.available_objects = {}
+        self.used_objects = []
+
+        dump = json.dumps([c.__dict__ for c in self.commands], cls=JSONEncoder)
 
         if filename is not None:
             f = open(filename, 'w')
@@ -348,23 +485,20 @@ class MPLTracker(object):
 
     @disable_intercept
     def get_fig(self):
-        for command in self.commands:
-            if command.id_obj is not None:
-                # then we need to get from self.returns
-                # print "getting obj from self.returns", command.id_obj, self.returns
-                obj = self.returns[command.id_obj]
-            else:
-                obj = plt
+        for i,command in enumerate(self.commands):
+            # print i
+            obj = _getobject(command.obj, self.available_objects)
 
-            ret = command.run(obj)
+            ret = command.run(obj, self.available_objects)
 
             if not (isinstance(ret, list) or isinstance(ret, tuple)):
                 ret_ = (ret,)
             else:
                 ret_ = ret
 
-            for ri,id_return in zip(ret_,command.ids_return):
-                self.returns[id_return] = ri
+            # now assign to the expected output ids
+            for ri,return_ in zip(ret_, command.returns):
+                self.available_objects[return_] = ri
 
         return plt.gcf()
 

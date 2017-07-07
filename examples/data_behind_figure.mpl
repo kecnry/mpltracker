@@ -1,1 +1,1 @@
-[{"kwargs": {}, "args": [[1, 2, 3], [1, 2, 3]], "ids_return": [], "func": "plot", "id_obj": null}]
+[{"returns": ["<id:UNUSED>"], "args": [[1, 2, 3], [1, 2, 3]], "obj": null, "func": "plot", "kwargs": {}}]
