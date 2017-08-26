@@ -24,7 +24,7 @@ SOFTWARE.
 """
 
 import types
-import modulehacker
+from . import modulehacker
 
 _modules = {}
 _decorators = []

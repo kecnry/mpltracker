@@ -6,8 +6,8 @@ _intercept_user = False
 
 _trackers = {}
 
-import decorations
-import functools
+from . import decorations
+from . import functools
 
 try:
     from astropy.table import Table, Column
@@ -361,7 +361,6 @@ class MPLTracker(object):
         # For now let's only support plot with a single dataset.  Its difficult
         # otherwise to deal with different lengthed columns.
         if len(self.commands) != 1:
-            print self.commands
             raise NotImplementedError("currently only supports 1 dataset (you have {})".format(len(self.commands)))
 
         for command in self.commands:
