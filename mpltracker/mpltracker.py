@@ -114,6 +114,7 @@ decorations.register(intercept_func, "matplotlib.colors")
 import numpy as np
 import os, sys
 
+import matplotlib
 if 'DISPLAY' not in os.environ.keys() and sys.platform not in ['win32','cygwin']:
     matplotlib.use('Agg')
 elif hasattr(sys, 'real_prefix'):
