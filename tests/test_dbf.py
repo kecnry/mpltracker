@@ -1,8 +1,5 @@
 from nose.tools import assert_raises
 
-import matplotlib
-matplotlib.use('Agg')
-
 import mpltracker
 import matplotlib.pyplot as plt
 

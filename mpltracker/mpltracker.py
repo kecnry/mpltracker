@@ -112,6 +112,14 @@ decorations.register(intercept_func, "matplotlib.collections")
 decorations.register(intercept_func, "matplotlib.colors")
 
 import numpy as np
+import os, sys
+
+if 'DISPLAY' not in os.environ.keys() and sys.platform not in ['win32','cygwin']:
+    matplotlib.use('Agg')
+elif hasattr(sys, 'real_prefix'):
+    # then we're likely in a virtualenv.  Our best bet is to use the 'TkAgg'
+    # backend, but this will require python-tk to be installed on the system
+    matplotlib.use('TkAgg')
 
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.art3d
@@ -122,7 +130,6 @@ import matplotlib.colors
 import inspect, types
 import json
 import base64
-import os, sys
 import urllib2
 
 class JSONEncoder(json.JSONEncoder):
