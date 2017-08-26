@@ -13,8 +13,8 @@ dist: trusty
 env:
     global:
         # Set defaults to avoid repeating in most cases
-        - CONDA_DEPENDENCIES='matplotlib pyyaml'
-        - PIP_DEPENDENCIES='nose matplotlib pyyaml'
+        - CONDA_DEPENDENCIES='pyyaml'
+        - PIP_DEPENDENCIES='nose pyyaml'
 
 matrix:
 
@@ -33,6 +33,9 @@ matrix:
         # Try with stable versions of matplotlib
         - os: linux
           env: PYTHON_VERSION=2.7 MATPLOTLIB_VERSION=stable NUMPY_VERSION=stable ASTROPY_VERSION=stable'
+
+        - os: linux
+          env: PYTHON_VERSION=3.6 MATPLOTLIB_VERSION=dev NUMPY_VERSION=dev ASTROPY_VERSION=dev'
 
         - os: linux
           env: PYTHON_VERSION=3.6 MATPLOTLIB_VERSION=stable NUMPY_VERSION=stable ASTROPY_VERSION=stable'
