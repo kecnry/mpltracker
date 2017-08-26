@@ -1,6 +1,8 @@
 from nose.tools import assert_raises
 
 import mpltracker
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 def test_dbf():
