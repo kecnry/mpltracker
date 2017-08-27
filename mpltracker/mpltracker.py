@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+# NOTE: python3 will fail to find matplotlib.cbook unless matplotlib is imported
+# here before we do all of the hacky magic
+import matplotlib
+
 _current = None
 _intercept = False
 _intercept_user = False
@@ -114,7 +118,6 @@ decorations.register(intercept_func, "matplotlib.colors")
 import numpy as np
 import os, sys
 
-import matplotlib
 if 'DISPLAY' not in os.environ.keys() and sys.platform not in ['win32','cygwin']:
     matplotlib.use('Agg')
 elif hasattr(sys, 'real_prefix'):
