@@ -131,7 +131,13 @@ import matplotlib.colors
 import inspect, types
 import json
 import base64
-import urllib2
+
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen
 
 class JSONEncoder(json.JSONEncoder):
     """
@@ -303,7 +309,7 @@ class MPLTracker(object):
             else:
                 try:
                     # maybe we were passed a url
-                    data = urllib2.urlopen(load).read()
+                    data = urlopen(load).read()
                 except ValueError:
                     # as last resort: maybe we were passed the json string itself
                     data = load
