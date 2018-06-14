@@ -31,7 +31,8 @@ matrix:
           env: PYTHON_VERSION=2.7 MATPLOTLIB_VERSION=stable NUMPY_VERSION=stable ASTROPY_VERSION=stable'
 
         - os: linux
-          env: PYTHON_VERSION=2.7 MATPLOTLIB_VERSION=dev NUMPY_VERSION=dev ASTROPY_VERSION=dev'
+          env: PYTHON_VERSION=2.7 MATPLOTLIB_VERSION=dev NUMPY_VERSION=dev ASTROPY_VERSION=stable'
+          # NOTE: astropy dev now requires python 3.5+
 
         # Python 3.6: lowest version, stable, dev
         # note: NUMPY 1.10 is not supported with PYTHON 3.6, so we'll use stable instead
